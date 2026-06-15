@@ -777,7 +777,7 @@
         reader.readAsText(file);
     }
 
-    // ======================= EXAM SESSIONS =======================
+    // ======================= EXAM SESSIONS (SEMUA SOAL) =======================
     function startExamSession() {
         let subId = document.getElementById('exam-subject-select').value;
         if(!subId) { showToast("Pilih mata kuliah terlebih dahulu","danger"); return; }
@@ -785,13 +785,15 @@
         let pool = globalQuestions.filter(q => q.subject_id === subId);
         if(!pool.length) { showToast("Mata kuliah ini belum memiliki soal di repositori","danger"); return; }
 
-        pool = pool.sort(() => 0.5 - Math.random()).slice(0, 25);
+        // PERBAIKAN: Tidak membatasi jumlah soal, ambil semua soal
+        // Diacak agar lebih adil (opsional, bisa dihapus jika ingin urutan asli)
+        pool = pool.sort(() => 0.5 - Math.random());
 
         activeExam.subjectId = subId;
         activeExam.questions = pool;
         activeExam.currentIndex = 0;
         activeExam.userAnswers = {};
-        activeExam.remainingTime = pool.length * 60; 
+        activeExam.remainingTime = pool.length * 60; // 1 menit per soal
 
         let sub = globalSubjects.find(s => s.id === subId);
         document.getElementById('exam-current-subject-badge').innerText = sub ? sub.nama_mk : 'UJIAN';
@@ -907,14 +909,13 @@
             document.getElementById('result-correct-tag').innerText = correctCount;
             document.getElementById('result-wrong-tag').innerText = wrongCount;
 
-            // MENAMPILKAN SEMUA SOAL LENGKAP DENGAN GAMBAR
+            // Menampilkan semua soal dengan gambar
             let detailsHtml = activeExam.questions.map((q, idx) => {
                 let userAns = activeExam.userAnswers[q.id] || '-';
                 let isCorrect = userAns === q.kunci_jawaban;
                 let userAnswerText = (userAns !== '-') ? q['opsi_' + userAns.toLowerCase()] : '-';
                 let correctAnswerText = q['opsi_' + q.kunci_jawaban.toLowerCase()];
                 
-                // Bagian gambar jika ada
                 let imageHtml = '';
                 if (q.image_base64) {
                     imageHtml = `<div class="mt-2"><img src="${q.image_base64}" class="exam-question-image" alt="Gambar soal"></div>`;
