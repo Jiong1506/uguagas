@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>UAS Management | Nexus Suite (Supabase)</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.0/dist/umd/supabase.js"></script>
+    <style>
+        :root {
+            --bg-main: #eef2f5;
+            --sidebar-bg: rgba(255, 255, 255, 0.92);
+            --card-bg: #ffffff;
+            --card-border: rgba(0, 0, 0, 0.05);
+            --text-main: #1a2c3e;
+            --text-muted: #5a6e7c;
+            --accent-teal: #1f8a7c;
+            --accent-coral: #e86f6f;
+            --accent-mustard: #e5b83c;
+            --accent-mint: #3aaf6e;
+            --btn-gradient: linear-gradient(135deg, #1f8a7c 0%, #40bfb0 100%);
+            --sidebar-width: 290px;
+            --sidebar-glow: rgba(31, 138, 124, 0.15);
+        }
+
+        *:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at 10% 30%, rgba(31,138,124,0.08) 0%, rgba(232,111,111,0.03) 100%);
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, h6, .brand-text { font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -0.02em; }
+
+        /* ===== SIDEBAR ULTRA MODERN ===== */
+        .sidebar {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            bottom: 20px;
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 32px;
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1), 0 0 0 0.5px rgba(255,255,255,0.6) inset;
+            z-index: 1050;
+            padding: 1.8rem 1.2rem;
+            transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar::-webkit-scrollbar { width: 5px;
+        }
+        .sidebar::-webkit-scrollbar-track { background: transparent;
+        }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--accent-teal); border-radius: 10px; opacity: 0.5;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0.5rem 0.8rem 1.5rem 0.8rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+        }
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(145deg, #1f8a7c, #2ba394);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 14px -6px rgba(31,138,124,0.4);
+        }
+        .brand-icon i { font-size: 1.8rem; color: white;
+        }
+        .brand-text { font-size: 1.5rem; font-weight: 800; background: linear-gradient(120deg, #1f8a7c, #2b9f8e); -webkit-background-clip: text;
+            background-clip: text; color: transparent; }
+
+        .nav-link-custom {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.9rem 1.2rem;
+            margin: 0.4rem 0;
+            border-radius: 20px;
+            color: var(--text-muted);
+            font-weight: 600;
+            transition: all 0.25s;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            width: 100%;
+            text-align: left;
+        }
+        .nav-link-custom i { font-size: 1.45rem; width: 28px; transition: transform 0.2s;
+        }
+        .nav-link-custom:hover {
+            background: rgba(31, 138, 124, 0.08);
+            color: var(--accent-teal);
+            transform: translateX(4px);
+        }
+        .nav-link-custom:hover i { transform: scale(1.05);
+        }
+        .nav-link-custom.active {
+            background: linear-gradient(115deg, rgba(31,138,124,0.15) 0%, rgba(64,191,176,0.08) 100%);
+            color: var(--accent-teal);
+            font-weight: 700;
+            border-left: 3px solid var(--accent-teal);
+            box-shadow: inset 0 0 0 1px rgba(31,138,124,0.2);
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(3px);
+            z-index: 1040;
+            display: none;
+            transition: 0.2s;
+        }
+
+        .mobile-navbar {
+            display: none;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            padding: 0.7rem 1.2rem;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .menu-btn {
+            background: var(--accent-teal);
+            border: none;
+            width: 48px;
+            height: 48px;
+            border-radius: 30px;
+            color: white;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            cursor: pointer;
+            z-index: 1021;
+        }
+        .mobile-brand {
+            font-size: 1.3rem;
+            font-weight: 800;
+            background: linear-gradient(120deg, #1f8a7c, #2b9f8e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .main-content {
+            margin-left: calc(var(--sidebar-width) + 20px);
+            padding: 2rem 2rem 2rem 1rem;
+            min-height: 100vh;
+            transition: margin-left 0.3s;
+        }
+
+        @media (max-width: 850px) {
+            .sidebar {
+                transform: translateX(-120%) !important;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                border-radius: 0 28px 28px 0;
+                margin: 0;
+                background: rgba(255,255,255,0.98);
+            }
+            .sidebar.open {
+                transform: translateX(0) !important;
+            }
+            .mobile-navbar {
+                display: flex;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+                padding-top: 0.8rem;
+            }
+            .glass-card {
+                padding: 1.25rem;
+            }
+            .table-responsive {
+                overflow-x: auto;
+            }
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(0,0,0,0.04);
+            border-radius: 28px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 20px -8px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+        .glass-card:hover {
+            box-shadow: 0 16px 28px -12px rgba(31,138,124,0.12);
+            border-color: rgba(31,138,124,0.15);
+        }
+
+        .icon-shape { width: 52px; height: 52px; background: rgba(31,138,124,0.1); border-radius: 18px;
+            display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--accent-teal);
+        }
+        .card-coral .icon-shape { background: rgba(232,111,111,0.1); color: var(--accent-coral);
+        }
+        .card-mustard .icon-shape { background: rgba(229,184,60,0.12); color: #b87c1f;
+        }
+        .card-mint .icon-shape { background: rgba(58,175,110,0.1); color: var(--accent-mint);
+        }
+
+        .form-control, .form-select {
+            background: #fefefe;
+            border: 1px solid #e0e7ed;
+            border-radius: 20px;
+            padding: 0.7rem 1.2rem;
+            transition: 0.2s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-teal);
+            box-shadow: 0 0 0 3px rgba(31,138,124,0.15) !important;
+        }
+        .btn-gradient {
+            background: var(--btn-gradient);
+            color: white;
+            border-radius: 40px;
+            padding: 0.65rem 1.6rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.2s;
+        }
+        .btn-gradient:hover { transform: translateY(-2px); filter: brightness(1.02); box-shadow: 0 8px 18px rgba(31,138,124,0.3);
+        }
+        .btn-outline-custom {
+            background: white;
+            border: 1px solid #dce3e9;
+            border-radius: 40px;
+            padding: 0.65rem 1.6rem;
+            font-weight: 500;
+        }
+        .table th { font-weight: 700; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.5px;
+            color: var(--text-muted); border-bottom: 1px solid #eef2f5; }
+        .table td { border-bottom: 1px solid #f0f3f7;
+            vertical-align: middle; }
+
+        .question-number-box {
+            width: 44px;
+            height: 44px; display: flex; align-items: center; justify-content: center;
+            border-radius: 16px; cursor: pointer; font-weight: 600; background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            transition: 0.15s;
+        }
+        .question-number-box.active { background: var(--accent-teal); color: white; border-color: var(--accent-teal);
+        }
+        .question-number-box.answered { background: rgba(58,175,110,0.2); color: #2c6e4f; border-color: #9ae6b4;
+        }
+        .option-container {
+            border: 1px solid #e2edf2;
+            background: white;
+            border-radius: 20px;
+            padding: 0.9rem;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: 0.2s;
+        }
+        .option-container.selected { border-color: var(--accent-teal); background: rgba(31,138,124,0.05);
+        }
+        .option-badge {
+            width: 36px;
+            height: 36px; border-radius: 14px; background: #f0f4f9;
+            display: flex; align-items: center; justify-content: center; font-weight: 700;
+        }
+
+        section { display: none; animation: fadeUp 0.35s ease;
+        }
+        section.active-section { display: block;
+        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px);
+        } to { opacity: 1; transform: translateY(0); } }
+
+        .nav-tabs .nav-link {
+            color: var(--text-muted);
+            border: none; font-weight: 600; border-radius: 30px;
+            padding: 0.6rem 1.2rem;
+        }
+        .nav-tabs .nav-link.active {
+            background: rgba(31,138,124,0.1);
+            color: var(--accent-teal);
+            border-bottom: none;
+        }
+
+        .exam-detail-item {
+            background: white;
+            border-radius: 20px; padding: 1rem; margin-bottom: 1rem;
+            border-left: 5px solid #cbd5e0;
+        }
+        .exam-detail-item.correct { background: #f0fff4; border-left-color: #38a169;
+        }
+        .exam-detail-item.incorrect { background: #fff5f5; border-left-color: #e53e3e;
+        }
+        .detail-answer-row { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-top: 0.5rem;
+        }
+        .badge-status { border-radius: 50px; padding: 0.2rem 0.9rem; font-size: 0.7rem; font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-navbar">
+    <button class="menu-btn" id="mobileMenuBtn"><i class="bi bi-grid-3x3-gap-fill"></i></button>
+    <div class="mobile-brand">NEXUS UAS</div>
+    <div style="flex:1"></div>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="sidebar" id="mainSidebar">
+    <div class="sidebar-brand">
+        <div class="brand-icon"><i class="bi bi-stars"></i></div>
+        <span class="brand-text">nexus<span style="font-weight:500">UAS</span></span>
+    </div>
+    <nav style="flex:1">
+        <div class="nav-link-custom" data-section="dashboard">
+            <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+        </div>
+        <div class="nav-link-custom" data-section="questions-hub">
+            <i class="bi bi-database-gear"></i> <span>Bank Soal & MK</span>
+        </div>
+        <div class="nav-link-custom" data-section="exam">
+            <i class="bi bi-lightbulb"></i> <span>Sesi Ujian</span>
+        </div>
+        <div class="nav-link-custom" data-section="results">
+            <i class="bi bi-bar-chart-steps"></i> <span>Riwayat Nilai</span>
+        </div>
+    </nav>
+    <div class="sidebar-footer mt-4 pt-3" style="font-size:0.7rem; text-align:center; color:var(--text-muted); border-top:1px solid rgba(0,0,0,0.05);">
+        <i class="bi bi-shield-check"></i> Academic Suite
+    </div>
+</div>
+
+<main class="main-content">
+    <section id="dashboard" class="active-section">
+        <div class="mb-4"><h2 class="fw-bold m-0">Metrics Dashboard</h2><p class="text-muted">Ringkasan performa akademik</p></div>
+        <div class="row g-4 mb-5">
+            <div class="col-md-3 col-6"><div class="glass-card d-flex align-items-center justify-content-between"><div><span class="text-muted small fw-bold">Mata Kuliah</span><h2 class="fw-bold m-0" id="stat-total-subjects">0</h2></div><div class="icon-shape"><i class="bi bi-collection"></i></div></div></div>
+            <div class="col-md-3 col-6"><div class="glass-card card-coral d-flex align-items-center justify-content-between"><div><span class="text-muted small fw-bold">Bank Soal</span><h2 class="fw-bold m-0" id="stat-total-questions">0</h2></div><div class="icon-shape"><i class="bi bi-database"></i></div></div></div>
+            <div class="col-md-3 col-6"><div class="glass-card card-mustard d-flex align-items-center justify-content-between"><div><span class="text-muted small fw-bold">Ujian Selesai</span><h2 class="fw-bold m-0" id="stat-total-results">0</h2></div><div class="icon-shape"><i class="bi bi-activity"></i></div></div></div>
+            <div class="col-md-3 col-6"><div class="glass-card card-mint d-flex align-items-center justify-content-between"><div><span class="text-muted small fw-bold">Rata-rata Skor</span><h2 class="fw-bold m-0" style="color:var(--accent-mint);" id="stat-avg-score">0.0</h2></div><div class="icon-shape"><i class="bi bi-graph-up-arrow"></i></div></div></div>
+        </div>
+        <div class="row"><div class="col-lg-12"><div class="glass-card"><h5 class="fw-bold mb-3"><i class="bi bi-pie-chart-fill me-2" style="color:var(--accent-teal);"></i>Distribusi Soal per MK</h5><div style="position:relative; height:260px;"><canvas id="chartDistribution"></canvas></div></div></div></div>
+    </section>
+
+    <section id="questions-hub">
+        <div class="mb-3"><h2 class="fw-bold">Academic Repository</h2><p class="text-muted">Manajemen kurikulum & bank soal</p></div>
+        <ul class="nav nav-tabs mb-3"><li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#panel-questions"><i class="bi bi-database-fill me-2"></i>Bank Soal</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#panel-subjects"><i class="bi bi-collection-play-fill me-2"></i>Kelola MK</button></li></ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="panel-questions">
+                <div class="glass-card mb-3"><div class="d-flex flex-wrap gap-2 justify-content-between align-items-center"><div class="d-flex gap-2 flex-grow-1" style="min-width:220px"><select class="form-select" id="filter-question-subject"><option value="">Semua MK</option></select><input type="text" class="form-control" id="search-question" placeholder="Cari soal / jawaban"></div><div><button class="btn btn-outline-custom btn-sm" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-cloud-arrow-up"></i> Import</button><button class="btn btn-gradient btn-sm ms-2" data-bs-toggle="modal" data-bs-target="#questionModal" onclick="clearQuestionForm()"><i class="bi bi-plus-lg"></i> Soal</button></div></div></div>
+                <div class="glass-card"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Mata Kuliah</th><th>Pertanyaan</th><th>Jawaban Benar</th><th>Kunci</th><th class="text-end">Aksi</th></tr></thead><tbody id="questions-table-body"></tbody></table></div><div class="d-flex justify-content-between mt-3"><div class="text-muted small" id="pagination-info"></div><nav><ul class="pagination pagination-sm m-0" id="pagination-controls"></ul></nav></div></div>
+            </div>
+            <div class="tab-pane fade" id="panel-subjects">
+                <div class="glass-card mb-3 d-flex flex-wrap justify-content-between gap-2"><input type="text" class="form-control" id="search-subject" placeholder="Cari MK..." style="max-width:250px"><button class="btn btn-gradient btn-sm" data-bs-toggle="modal" data-bs-target="#subjectModal" onclick="clearSubjectForm()"><i class="bi bi-plus-circle-fill"></i> MK Baru</button></div>
+                <div class="glass-card"><div class="table-responsive"><table class="table"><thead><tr><th>Kode</th><th>Nama MK</th><th>Semester</th><th>Deskripsi</th><th>Status</th><th class="text-end">Aksi</th></tr></thead><tbody id="subjects-table-body"></tbody></table></div></div>
+            </div>
+        </div>
+    </section>
+
+    <section id="exam">
+        <div class="mb-3"><h2 class="fw-bold">Adaptive Examination</h2><p class="text-muted">Simulasi ujian dengan timer cerdas</p></div>
+        <div id="exam-setup-container" class="glass-card text-center py-5" style="max-width:500px; margin:0 auto"><i class="bi bi-cpu display-2" style="color:var(--accent-teal);"></i><h3 class="fw-bold mt-2">Inisialisasi Ujian</h3><p class="text-muted">Pilih mata kuliah yang akan diujikan</p><select class="form-select mb-4 mx-auto" style="max-width:280px" id="exam-subject-select"></select><button class="btn btn-gradient px-5" onclick="startExamSession()">Mulai Ujian</button></div>
+        <div id="exam-active-container" class="row d-none"><div class="col-lg-8 mb-4"><div class="glass-card"><div class="d-flex justify-content-between flex-wrap"><span class="badge bg-success px-3 py-2 mb-2" id="exam-current-subject-badge">MODUL</span><div class="fs-5 fw-bold" style="color:var(--accent-coral);"><i class="bi bi-stopwatch-fill"></i> <span id="exam-timer">00:00</span></div></div><div class="progress mt-2 mb-3" style="height:7px"><div class="progress-bar" style="background:var(--accent-teal);" id="exam-progress-bar" width="0%"></div></div><div><span class="text-muted small" id="exam-question-index-title"></span><h4 class="fw-bold fs-6" id="exam-question-text"></h4><div id="exam-question-image-wrapper" class="mt-2 d-none"><img id="exam-question-image" class="img-fluid rounded-3" style="max-height:180px"></div></div><div id="exam-options-wrapper" class="mt-3"></div><div class="d-flex justify-content-between mt-4"><button class="btn btn-outline-custom btn-sm" id="btn-exam-prev" onclick="navigateExamQuestion(-1)"><i class="bi bi-chevron-left"></i> Sebelumnya</button><button class="btn btn-gradient btn-sm" style="background:var(--accent-coral);" id="btn-exam-submit" onclick="submitExamSession()">Kirim Jawaban</button><button class="btn btn-outline-custom btn-sm" id="btn-exam-next" onclick="navigateExamQuestion(1)">Selanjutnya <i class="bi bi-chevron-right"></i></button></div></div></div><div class="col-lg-4"><div class="glass-card"><h6 class="fw-bold text-muted">Navigasi Soal</h6><div class="d-flex flex-wrap gap-2" id="exam-navigation-grid"></div></div></div></div>
+        <div id="exam-result-container" class="d-none"><div class="glass-card text-center p-4"><i class="bi bi-trophy-fill display-3 text-warning"></i><h3 class="fw-bold mt-2">Evaluasi Selesai</h3><h1 class="display-1 fw-bold text-success my-2" id="result-score-tag">0</h1><div class="row g-2 my-3 mx-auto" style="max-width:400px"><div class="col-4"><div class="bg-light rounded-4 p-2">Total<h4 id="result-total-tag">0</h4></div></div><div class="col-4"><div class="bg-success bg-opacity-10 rounded-4 p-2 text-success">Benar<h4 id="result-correct-tag">0</h4></div></div><div class="col-4"><div class="bg-danger bg-opacity-10 rounded-4 p-2 text-danger">Salah<h4 id="result-wrong-tag">0</h4></div></div></div><div id="exam-detail-answers" class="mt-4 text-start" style="max-height: 450px; overflow-y: auto;"></div><button class="btn btn-gradient px-4 mt-4" onclick="exitExamReport()">Kembali ke Dashboard</button></div></div>
+    </section>
+
+    <section id="results"><div class="mb-3"><h2 class="fw-bold">History Performance</h2><p class="text-muted">Arsip hasil ujian mahasiswa</p></div><div class="glass-card"><div class="table-responsive"><table class="table"><thead><tr><th>Waktu</th><th>Mata Kuliah</th><th>Benar/Total</th><th>Skor</th></tr></thead><tbody id="global-results-table-body"></tbody></table></div></div></section>
+</main>
+
+<div class="modal fade" id="subjectModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h4 class="fw-bold">Registrasi Mata Kuliah</h4><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="subjectForm"><input type="hidden" id="subject-id"><div class="mb-2"><label>Nama MK</label><input type="text" class="form-control" id="subject-name" required></div><div class="mb-2"><label>Kode MK</label><input type="text" class="form-control" id="subject-code" required></div><div class="mb-2"><label>Semester</label><input type="number" class="form-control" id="subject-semester" min="1" max="8" required></div><div class="mb-2"><label>Deskripsi</label><textarea class="form-control" id="subject-desc" rows="2"></textarea></div><div class="text-end mt-3"><button type="button" class="btn btn-outline-custom me-2" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-gradient">Simpan MK</button></div></form></div></div></div></div>
+
+<div class="modal fade" id="questionModal" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h4 class="fw-bold">Formulir Soal</h4><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="questionForm"><input type="hidden" id="question-id"><input type="hidden" id="question-image-base64"><div class="row g-2 mb-2"><div class="col-md-6"><label>Mata Kuliah</label><select class="form-select" id="question-subject-id" required></select></div><div class="col-md-6"><label>Gambar (opsional)</label><input type="file" class="form-control" id="question-image-input" accept="image/*"></div></div><div id="avatar-preview-wrapper" class="mb-2 d-none"><div class="img-preview-container p-1"><img id="question-img-preview" class="img-fluid rounded"><button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle" onclick="removeSelectedImage()"><i class="bi bi-x-lg"></i></button></div></div><div class="mb-2"><label>Pertanyaan</label><textarea class="form-control" id="question-text" rows="2" required></textarea></div><div class="row g-2"><div class="col-md-6"><label>Opsi A</label><input type="text" class="form-control" id="question-oa" required></div><div class="col-md-6"><label>Opsi B</label><input type="text" class="form-control" id="question-ob" required></div><div class="col-md-6"><label>Opsi C</label><input type="text" class="form-control" id="question-oc" required></div><div class="col-md-6"><label>Opsi D</label><input type="text" class="form-control" id="question-od" required></div></div><div class="mt-2"><label>Kunci Jawaban</label><select class="form-select" id="question-correct"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div><div class="text-end mt-3"><button type="button" class="btn btn-outline-custom me-2" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-gradient">Simpan Soal</button></div></form></div></div></div></div>
+
+<div class="modal fade" id="importModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header border-0"><h4 class="fw-bold">Bulk Import .TXT</h4><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="importForm"><div class="mb-2"><label>Target Mata Kuliah</label><select class="form-select" id="import-subject-id" required></select></div><div class="mb-2"><label>File (format: Q: , A: , B: , C: , D: , K: )</label><input type="file" class="form-control" id="import-file-txt" accept=".txt" required></div><div class="text-end mt-3"><button type="button" class="btn btn-outline-custom me-2" data-bs-dismiss="modal">Batal</button><button type="submit" class="btn btn-gradient">Ekstrak & Simpan</button></div></form></div></div></div></div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3"><div id="liveToast" class="toast align-items-center text-dark border-0" role="alert"><div class="d-flex p-2"><div class="toast-body fw-semibold" id="toast-message"></div><button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button></div></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ======================= SUPABASE CONFIGURATION =======================
+    const SUPABASE_URL = "https://yqlbtfcupzfyypomkwuc.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxbGJ0ZmN1cHpmeXlwb21rd3VjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTQzOTM4OCwiZXhwIjoyMDk3MDE1Mzg4fQ.8JKZwA5r1q1KTbJz5UNZMM4eIRbAgQYevl47WYLPynM";
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let globalSubjects = [], globalQuestions = [], globalResults = [];
+    let distributionChart = null;
+    let questionCurrentPage = 1, questionPageSize = 5;
+    let activeExam = { subjectId: null, questions: [], currentIndex: 0, userAnswers: {}, remainingTime: 0, timerInterval: null };
+    
+    function genId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 8); }
+
+    // ====== FUNGSI TOGGLE SIDEBAR MOBILE (FIXED & TESTED) ======
+    function toggleSidebar() {
+        const sidebar = document.getElementById('mainSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar && overlay) {
+            sidebar.classList.toggle('open');
+            overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+        }
+    }
+
+    function closeSidebarOnMobile() {
+        const sidebar = document.getElementById('mainSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar && overlay) {
+            sidebar.classList.remove('open');
+            overlay.style.display = 'none';
+        }
+    }
+    // ==========================================================
+
+    async function fetchAllData() {
+        try {
+            const { data: subjects, error: errSub } = await supabase.from('subjects').select('*').order('created_at', { ascending: false });
+            if (errSub) throw errSub;
+            const { data: questions, error: errQ } = await supabase.from('questions').select('*').order('created_at', { ascending: false });
+            if (errQ) throw errQ;
+            const { data: results, error: errR } = await supabase.from('exam_results').select('*, subjects(nama_mk)').order('created_at', { ascending: false });
+            if (errR) throw errR;
+            
+            globalSubjects = subjects || [];
+            globalQuestions = questions || [];
+            globalResults = results || [];
+            
+            renderSubjectsTable();
+            renderQuestionsTable();
+            renderGlobalResultsTable();
+            updateDashboardStats();
+            populateDropdowns();
+            renderExamSubjectSelect();
+        } catch (error) {
+            console.error(error);
+            showToast("Gagal memuat data: " + error.message, "danger");
+        }
+    }
+
+    function updateDashboardStats() {
+        document.getElementById('stat-total-subjects').innerText = globalSubjects.length;
+        document.getElementById('stat-total-questions').innerText = globalQuestions.length;
+        document.getElementById('stat-total-results').innerText = globalResults.length;
+        let avg = globalResults.reduce((a,b)=> a + parseFloat(b.score),0) / (globalResults.length||1);
+        document.getElementById('stat-avg-score').innerText = avg.toFixed(1);
+        const counts = {};
+        globalSubjects.forEach(s => counts[s.nama_mk] = 0);
+        globalQuestions.forEach(q => { let sub = globalSubjects.find(s => s.id === q.subject_id); if(sub) counts[sub.nama_mk]++; });
+        
+        if (distributionChart) distributionChart.destroy();
+        const ctx = document.getElementById('chartDistribution').getContext('2d');
+        distributionChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(counts),
+                datasets: [{
+                    label: 'Jumlah Soal',
+                    data: Object.values(counts),
+                    backgroundColor: 'rgba(31,138,124,0.3)',
+                    borderRadius: 12
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    function populateDropdowns() {
+        const opts = globalSubjects.map(s => `<option value="${s.id}">${escapeHtml(s.nama_mk)} [${escapeHtml(s.kode_mk)}]</option>`).join('');
+        document.getElementById('question-subject-id').innerHTML = '<option value="">-- Pilih MK --</option>' + opts;
+        document.getElementById('import-subject-id').innerHTML = '<option value="">-- Pilih MK --</option>' + opts;
+        document.getElementById('filter-question-subject').innerHTML = '<option value="">Semua MK</option>' + opts;
+    }
+
+    function renderExamSubjectSelect() {
+        document.getElementById('exam-subject-select').innerHTML = '<option value="">-- Pilih MK --</option>' + globalSubjects.map(s => `<option value="${s.id}">${escapeHtml(s.nama_mk)}</option>`).join('');
+    }
+
+    // ======================= SUBJECTS CRUD =======================
+    async function handleSubjectSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('subject-id').value;
+        const payload = {
+            nama_mk: document.getElementById('subject-name').value,
+            kode_mk: document.getElementById('subject-code').value,
+            semester: parseInt(document.getElementById('subject-semester').value),
+            deskripsi: document.getElementById('subject-desc').value
+        };
+        try {
+            if (id) {
+                await supabase.from('subjects').update(payload).eq('id', id);
+                showToast("MK diperbarui");
+            } else {
+                payload.id = genId();
+                payload.created_at = new Date().toISOString();
+                await supabase.from('subjects').insert([payload]);
+                showToast("MK ditambahkan");
+            }
+            bootstrap.Modal.getInstance(document.getElementById('subjectModal')).hide();
+            await fetchAllData();
+        } catch (err) {
+            showToast(err.message, "danger");
+        }
+    }
+
+    function editSubject(id) {
+        let s = globalSubjects.find(s => s.id === id);
+        if(s) {
+            document.getElementById('subject-id').value = s.id;
+            document.getElementById('subject-name').value = s.nama_mk;
+            document.getElementById('subject-code').value = s.kode_mk;
+            document.getElementById('subject-semester').value = s.semester;
+            document.getElementById('subject-desc').value = s.deskripsi || '';
+            new bootstrap.Modal(document.getElementById('subjectModal')).show();
+        }
+    }
+
+    async function deleteSubject(id) {
+        if(confirm("Hapus MK & semua soal terkait?")) {
+            try {
+                await supabase.from('subjects').delete().eq('id', id);
+                showToast("MK dan relasi terhapus");
+                await fetchAllData();
+            } catch (err) {
+                showToast(err.message, "danger");
+            }
+        }
+    }
+
+    function renderSubjectsTable() {
+        let q = document.getElementById('search-subject').value.toLowerCase();
+        let filtered = globalSubjects.filter(s => s.nama_mk.toLowerCase().includes(q) || s.kode_mk.toLowerCase().includes(q));
+        document.getElementById('subjects-table-body').innerHTML = filtered.map(s => `
+            <tr>
+                <td class="fw-bold" style="color:var(--accent-teal);">${escapeHtml(s.kode_mk)}</td>
+                <td>${escapeHtml(s.nama_mk)}</td>
+                <td>Semester ${s.semester}</td>
+                <td class="small">${escapeHtml(s.deskripsi || '-')}</td>
+                <td><span class="badge bg-success bg-opacity-25">Aktif</span></td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-custom me-1" onclick="editSubject('${s.id}')"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-outline-custom text-danger" onclick="deleteSubject('${s.id}')"><i class="bi bi-trash"></i></button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // ======================= QUESTIONS CRUD =======================
+    function clearQuestionForm() {
+        document.getElementById('questionForm').reset();
+        document.getElementById('question-id').value = '';
+        removeSelectedImage();
+    }
+
+    function previewSelectedImage(input) {
+        let file = input.files[0];
+        if(file) {
+            let reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('question-image-base64').value = e.target.result;
+                document.getElementById('question-img-preview').src = e.target.result;
+                document.getElementById('avatar-preview-wrapper').classList.remove('d-none');
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function removeSelectedImage() {
+        document.getElementById('question-image-input').value = '';
+        document.getElementById('question-image-base64').value = '';
+        document.getElementById('avatar-preview-wrapper').classList.add('d-none');
+    }
+
+    function editQuestion(id) {
+        let q = globalQuestions.find(q => q.id === id);
+        if(q) {
+            document.getElementById('question-id').value = q.id;
+            document.getElementById('question-subject-id').value = q.subject_id;
+            document.getElementById('question-text').value = q.pertanyaan;
+            document.getElementById('question-oa').value = q.opsi_a;
+            document.getElementById('question-ob').value = q.opsi_b;
+            document.getElementById('question-oc').value = q.opsi_c;
+            document.getElementById('question-od').value = q.opsi_d;
+            document.getElementById('question-correct').value = q.kunci_jawaban;
+            if(q.image_base64) {
+                document.getElementById('question-image-base64').value = q.image_base64;
+                document.getElementById('question-img-preview').src = q.image_base64;
+                document.getElementById('avatar-preview-wrapper').classList.remove('d-none');
+            } else {
+                removeSelectedImage();
+            }
+            new bootstrap.Modal(document.getElementById('questionModal')).show();
+        }
+    }
+
+    async function deleteQuestion(id) {
+        if(confirm("Hapus soal ini?")) {
+            try {
+                await supabase.from('questions').delete().eq('id', id);
+                showToast("Soal terhapus");
+                await fetchAllData();
+            } catch (err) { showToast(err.message,"danger"); }
+        }
+    }
+
+    async function handleQuestionSubmit(e) {
+        e.preventDefault();
+        const id = document.getElementById('question-id').value;
+        const payload = {
+            subject_id: document.getElementById('question-subject-id').value,
+            pertanyaan: document.getElementById('question-text').value,
+            opsi_a: document.getElementById('question-oa').value,
+            opsi_b: document.getElementById('question-ob').value,
+            opsi_c: document.getElementById('question-oc').value,
+            opsi_d: document.getElementById('question-od').value,
+            kunci_jawaban: document.getElementById('question-correct').value,
+            image_base64: document.getElementById('question-image-base64').value || null
+        };
+        try {
+            if(id) {
+                await supabase.from('questions').update(payload).eq('id', id);
+                showToast("Soal diperbarui");
+            } else {
+                payload.id = genId();
+                payload.created_at = new Date().toISOString();
+                await supabase.from('questions').insert([payload]);
+                showToast("Soal ditambahkan");
+            }
+            bootstrap.Modal.getInstance(document.getElementById('questionModal')).hide();
+            await fetchAllData();
+        } catch (err) { showToast(err.message, "danger"); }
+    }
+
+    function renderQuestionsTable() {
+        let subFilter = document.getElementById('filter-question-subject').value;
+        let q = document.getElementById('search-question').value.toLowerCase();
+        let filtered = globalQuestions.filter(item => {
+            let matchesSub = !subFilter || item.subject_id === subFilter;
+            let matchesSearch = item.pertanyaan.toLowerCase().includes(q) || 
+                                item.opsi_a.toLowerCase().includes(q) || 
+                                item.opsi_b.toLowerCase().includes(q) || 
+                                item.opsi_c.toLowerCase().includes(q) || 
+                                item.opsi_d.toLowerCase().includes(q);
+            return matchesSub && matchesSearch;
+        });
+
+        let totalItems = filtered.length;
+        let totalPages = Math.ceil(totalItems / questionPageSize) || 1;
+        if(questionCurrentPage > totalPages) questionCurrentPage = totalPages;
+        let start = (questionCurrentPage - 1) * questionPageSize;
+        let pageItems = filtered.slice(start, start + questionPageSize);
+
+        document.getElementById('pagination-info').innerText = `Menampilkan ${start+1}-${Math.min(start+questionPageSize, totalItems)} dari ${totalItems} soal`;
+        
+        let pgHtml = '';
+        for(let i=1; i<=totalPages; i++) {
+            pgHtml += `<li class="page-item ${i===questionCurrentPage?'active':''}"><button class="page-link" onclick="questionCurrentPage=${i}; renderQuestionsTable();">${i}</button></li>`;
+        }
+        document.getElementById('pagination-controls').innerHTML = pgHtml;
+
+        document.getElementById('questions-table-body').innerHTML = pageItems.map(item => {
+            let sub = globalSubjects.find(s => s.id === item.subject_id);
+            let rightText = item['opsi_' + item.kunci_jawaban.toLowerCase()];
+            return `
+                <tr>
+                    <td><span class="badge bg-light text-dark border">${escapeHtml(sub?sub.nama_mk:'-')}</span></td>
+                    <td>
+                        <div class="fw-semibold text-wrap" style="max-width:340px">${escapeHtml(item.pertanyaan)}</div>
+                        ${item.image_base64? '<span class="badge bg-info mt-1"><i class="bi bi-image"></i> Gambar</span>':''}
+                    </td>
+                    <td class="small text-muted">${escapeHtml(rightText)}</td>
+                    <td><span class="badge bg-success">${item.kunci_jawaban}</span></td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-custom me-1" onclick="editQuestion('${item.id}')"><i class="bi bi-pencil"></i></button>
+                        <button class="btn btn-sm btn-outline-custom text-danger" onclick="deleteQuestion('${item.id}')"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // ======================= BULK IMPORT =======================
+    async function handleImportSubmit(e) {
+        e.preventDefault();
+        let subId = document.getElementById('import-subject-id').value;
+        let fileInput = document.getElementById('import-file-txt');
+        if(!fileInput.files.length) return;
+        
+        let file = fileInput.files[0];
+        let reader = new FileReader();
+        reader.onload = async (evt) => {
+            try {
+                let text = evt.target.result;
+                let blocks = text.split(/Q:/g);
+                let structures = [];
+                
+                blocks.forEach(b => {
+                    if(!b.trim()) return;
+                    let lines = b.split('\n');
+                    let obj = { id: genId(), subject_id: subId, created_at: new Date().toISOString(), pertanyaan:'', opsi_a:'', opsi_b:'', opsi_c:'', opsi_d:'', kunci_jawaban:'A', image_base64: null };
+                    let qLines = [];
+                    
+                    lines.forEach(l => {
+                        let trimL = l.trim();
+                        if(trimL.startsWith('A:')) obj.opsi_a = trimL.substring(2).trim();
+                        else if(trimL.startsWith('B:')) obj.opsi_b = trimL.substring(2).trim();
+                        else if(trimL.startsWith('C:')) obj.opsi_c = trimL.substring(2).trim();
+                        else if(trimL.startsWith('D:')) obj.opsi_d = trimL.substring(2).trim();
+                        else if(trimL.startsWith('K:')) obj.kunci_jawaban = trimL.substring(2).trim().toUpperCase();
+                        else if(trimL) qLines.push(trimL);
+                    });
+                    obj.pertanyaan = qLines.join(' ');
+                    if(obj.pertanyaan && obj.opsi_a) structures.push(obj);
+                });
+
+                if(structures.length > 0) {
+                    await supabase.from('questions').insert(structures);
+                    showToast(`Berhasil mengimpor ${structures.length} soal!`);
+                } else {
+                    showToast("Format dokumen tidak valid atau kosong", "danger");
+                }
+                bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+                await fetchAllData();
+            } catch (err) { showToast(err.message, "danger"); }
+        };
+        reader.readAsText(file);
+    }
+
+    // ======================= EXAM SESSIONS =======================
+    function startExamSession() {
+        let subId = document.getElementById('exam-subject-select').value;
+        if(!subId) { showToast("Pilih mata kuliah terlebih dahulu","danger"); return; }
+        
+        let pool = globalQuestions.filter(q => q.subject_id === subId);
+        if(!pool.length) { showToast("Mata kuliah ini belum memiliki soal di repositori","danger"); return; }
+
+        pool = pool.sort(() => 0.5 - Math.random()).slice(0, 25);
+
+        activeExam.subjectId = subId;
+        activeExam.questions = pool;
+        activeExam.currentIndex = 0;
+        activeExam.userAnswers = {};
+        activeExam.remainingTime = pool.length * 60; 
+
+        let sub = globalSubjects.find(s => s.id === subId);
+        document.getElementById('exam-current-subject-badge').innerText = sub ? sub.nama_mk : 'UJIAN';
+
+        document.getElementById('exam-setup-container').classList.add('d-none');
+        document.getElementById('exam-active-container').classList.remove('d-none');
+        
+        renderExamQuestion();
+        renderExamNavigationGrid();
+        
+        clearInterval(activeExam.timerInterval);
+        activeExam.timerInterval = setInterval(handleExamTimer, 1000);
+    }
+
+    function handleExamTimer() {
+        if(activeExam.remainingTime <= 0) {
+            clearInterval(activeExam.timerInterval);
+            showToast("Waktu pengerjaan telah habis! Sistem mengirimkan jawaban otomatis.", "danger");
+            submitExamSession();
+            return;
+        }
+        activeExam.remainingTime--;
+        let m = Math.floor(activeExam.remainingTime / 60).toString().padStart(2,'0');
+        let s = (activeExam.remainingTime % 60).toString().padStart(2,'0');
+        document.getElementById('exam-timer').innerText = `${m}:${s}`;
+    }
+
+    function renderExamQuestion() {
+        let q = activeExam.questions[activeExam.currentIndex];
+        document.getElementById('exam-question-index-title').innerText = `PERTANYAAN ${activeExam.currentIndex + 1} DARI ${activeExam.questions.length}`;
+        document.getElementById('exam-question-text').innerText = q.pertanyaan;
+
+        if(q.image_base64) {
+            document.getElementById('exam-question-image').src = q.image_base64;
+            document.getElementById('exam-question-image-wrapper').classList.remove('d-none');
+        } else {
+            document.getElementById('exam-question-image-wrapper').classList.add('d-none');
+        }
+
+        let currentAns = activeExam.userAnswers[q.id];
+        let optsHtml = ['A','B','C','D'].map(letter => {
+            let isSelected = currentAns === letter;
+            return `
+                <div class="option-container ${isSelected?'selected':''}" onclick="selectExamOption('${letter}')">
+                    <div class="option-badge" style="${isSelected?'background:var(--accent-teal); color:white;':''}">${letter}</div>
+                    <div class="fw-medium">${escapeHtml(q['opsi_' + letter.toLowerCase()])}</div>
+                </div>
+            `;
+        }).join('');
+        document.getElementById('exam-options-wrapper').innerHTML = optsHtml;
+
+        let pct = ((activeExam.currentIndex + 1) / activeExam.questions.length) * 100;
+        document.getElementById('exam-progress-bar').style.width = pct + '%';
+    }
+
+    function selectExamOption(letter) {
+        let q = activeExam.questions[activeExam.currentIndex];
+        activeExam.userAnswers[q.id] = letter;
+        renderExamQuestion();
+        renderExamNavigationGrid();
+    }
+
+    function renderExamNavigationGrid() {
+        let html = activeExam.questions.map((q, index) => {
+            let isCurrent = index === activeExam.currentIndex;
+            let isAnswered = !!activeExam.userAnswers[q.id];
+            let cls = '';
+            if(isCurrent) cls = 'active';
+            else if(isAnswered) cls = 'answered';
+            return `<div class="question-number-box ${cls}" onclick="jumpToExamQuestion(${index})">${index+1}</div>`;
+        }).join('');
+        document.getElementById('exam-navigation-grid').innerHTML = html;
+    }
+
+    function navigateExamQuestion(dir) {
+        let target = activeExam.currentIndex + dir;
+        if(target >= 0 && target < activeExam.questions.length) {
+            activeExam.currentIndex = target;
+            renderExamQuestion();
+            renderExamNavigationGrid();
+        }
+    }
+
+    function jumpToExamQuestion(index) {
+        activeExam.currentIndex = index;
+        renderExamQuestion();
+        renderExamNavigationGrid();
+    }
+
+    async function submitExamSession() {
+        clearInterval(activeExam.timerInterval);
+        let correctCount = 0;
+        activeExam.questions.forEach(q => {
+            if(activeExam.userAnswers[q.id] === q.kunci_jawaban) correctCount++;
+        });
+
+        let total = activeExam.questions.length;
+        let wrongCount = total - correctCount;
+        let finalScore = ((correctCount / total) * 100).toFixed(0);
+
+        try {
+            await supabase.from('exam_results').insert([{
+                id: genId(),
+                created_at: new Date().toISOString(),
+                subject_id: activeExam.subjectId,
+                total_questions: total,
+                correct_answers: correctCount,
+                score: parseInt(finalScore)
+            }]);
+            
+            document.getElementById('result-score-tag').innerText = finalScore;
+            document.getElementById('result-total-tag').innerText = total;
+            document.getElementById('result-correct-tag').innerText = correctCount;
+            document.getElementById('result-wrong-tag').innerText = wrongCount;
+
+            let detailsHtml = activeExam.questions.map((q, idx) => {
+                let userAns = activeExam.userAnswers[q.id] || '-';
+                let isCorrect = userAns === q.kunci_jawaban;
+                return `
+                    <div class="exam-detail-item ${isCorrect?'correct':'incorrect'}">
+                        <div class="fw-bold small text-muted">SOAL ${idx+1}</div>
+                        <p class="mb-1 fw-semibold text-dark">${escapeHtml(q.pertanyaan)}</p>
+                        <div class="detail-answer-row small">
+                            <div>Jawaban Anda: <span class="badge ${isCorrect?'bg-success':'bg-danger'}">${userAns}</span></div>
+                            <div>Kunci Jawaban: <span class="badge bg-primary">${q.kunci_jawaban}</span></div>
+                            <span class="badge-status ${isCorrect?'bg-success text-success bg-opacity-10':'bg-danger text-danger bg-opacity-10'}">
+                                ${isCorrect?'BENAR':'SALAH'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('exam-detail-answers').innerHTML = detailsHtml;
+
+            document.getElementById('exam-active-container').classList.add('d-none');
+            document.getElementById('exam-result-container').classList.remove('d-none');
+            await fetchAllData();
+        } catch (err) { showToast(err.message, "danger"); }
+    }
+
+    function exitExamReport() {
+        document.getElementById('exam-result-container').classList.add('d-none');
+        document.getElementById('exam-setup-container').classList.remove('d-none');
+        switchSection('dashboard');
+    }
+
+    function renderGlobalResultsTable() {
+        document.getElementById('global-results-table-body').innerHTML = globalResults.map(r => {
+            let dateStr = new Date(r.created_at).toLocaleString('id-ID',{dateStyle:'short', timeStyle:'short'});
+            return `
+                <tr>
+                    <td class="small text-muted">${dateStr}</td>
+                    <td class="fw-semibold">${escapeHtml(r.subjects ? r.subjects.nama_mk : '-')}</td>
+                    <td><span class="badge bg-light text-dark border fw-medium">${r.correct_answers}/${r.total_questions}</span></td>
+                    <td><span class="fw-bold" style="color:${r.score>=70?'var(--accent-mint)':'var(--accent-coral)'}">${r.score}</span></td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    // ======================= ROUTING UTILS =======================
+    function switchSection(sectionId) {
+        document.querySelectorAll('section').forEach(s => s.classList.remove('active-section'));
+        document.querySelectorAll('.sidebar .nav-link-custom').forEach(l => l.classList.remove('active'));
+        
+        const targetSection = document.getElementById(sectionId);
+        if(targetSection) targetSection.classList.add('active-section');
+        
+        const targetLink = document.querySelector(`.sidebar .nav-link-custom[data-section="${sectionId}"]`);
+        if(targetLink) targetLink.classList.add('active');
+
+        closeSidebarOnMobile();
+    }
+
+    function showToast(msg, type="success") {
+        let t = document.getElementById('liveToast');
+        t.className = `toast align-items-center border-0 text-white bg-${type==='danger'?'danger':'success'}`;
+        document.getElementById('toast-message').innerText = msg;
+        new bootstrap.Toast(t).show();
+    }
+
+    function escapeHtml(text) {
+        if(!text) return '';
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    // ======================= EVENT LISTENERS =======================
+    document.addEventListener("DOMContentLoaded", () => {
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleSidebar();
+            });
+        }
+        const overlay = document.getElementById('sidebarOverlay');
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                closeSidebarOnMobile();
+            });
+        }
+        document.querySelectorAll('.sidebar .nav-link-custom').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const section = link.getAttribute('data-section');
+                if(section) {
+                    e.preventDefault();
+                    switchSection(section);
+                }
+            });
+        });
+        fetchAllData();
+    });
+
+    document.getElementById('subjectForm').addEventListener('submit', handleSubjectSubmit);
+    document.getElementById('questionForm').addEventListener('submit', handleQuestionSubmit);
+    document.getElementById('importForm').addEventListener('submit', handleImportSubmit);
+    document.getElementById('search-question').addEventListener('keyup', () => { questionCurrentPage=1; renderQuestionsTable(); });
+    
+    window.addEventListener('resize', function() {
+        if(window.innerWidth > 850) {
+            document.getElementById('mainSidebar')?.classList.remove('open');
+            document.getElementById('sidebarOverlay').style.display = 'none';
+        }
+    });
+</script>
+</body>
+</html>
