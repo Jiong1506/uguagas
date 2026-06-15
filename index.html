@@ -412,10 +412,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ======================= SUPABASE CONFIGURATION =======================
+    // ======================= SUPABASE CONFIGURATION (PERBAIKAN) =======================
     const SUPABASE_URL = "https://yqlbtfcupzfyypomkwuc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxbGJ0ZmN1cHpmeXlwb21rd3VjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTQzOTM4OCwiZXhwIjoyMDk3MDE1Mzg4fQ.8JKZwA5r1q1KTbJz5UNZMM4eIRbAgQYevl47WYLPynM";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Perbaikan: menggunakan window.supabase karena library dimuat sebagai global
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let globalSubjects = [], globalQuestions = [], globalResults = [];
     let distributionChart = null;
@@ -424,7 +425,7 @@
     
     function genId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 8); }
 
-    // ====== FUNGSI TOGGLE SIDEBAR MOBILE (FIXED & TESTED) ======
+    // ====== FUNGSI TOGGLE SIDEBAR MOBILE ======
     function toggleSidebar() {
         const sidebar = document.getElementById('mainSidebar');
         const overlay = document.getElementById('sidebarOverlay');
@@ -442,8 +443,17 @@
             overlay.style.display = 'none';
         }
     }
-    // ==========================================================
 
+    // ======================= FUNGSI TAMBAHAN YANG HILANG =======================
+    function clearSubjectForm() {
+        document.getElementById('subject-id').value = '';
+        document.getElementById('subject-name').value = '';
+        document.getElementById('subject-code').value = '';
+        document.getElementById('subject-semester').value = '';
+        document.getElementById('subject-desc').value = '';
+    }
+
+    // ======================= FETCH DATA =======================
     async function fetchAllData() {
         try {
             const { data: subjects, error: errSub } = await supabase.from('subjects').select('*').order('created_at', { ascending: false });
@@ -986,6 +996,13 @@
                 }
             });
         });
+        
+        // Event listener untuk preview gambar di modal soal
+        const imageInput = document.getElementById('question-image-input');
+        if (imageInput) {
+            imageInput.addEventListener('change', function() { previewSelectedImage(this); });
+        }
+        
         fetchAllData();
     });
 
@@ -993,6 +1010,7 @@
     document.getElementById('questionForm').addEventListener('submit', handleQuestionSubmit);
     document.getElementById('importForm').addEventListener('submit', handleImportSubmit);
     document.getElementById('search-question').addEventListener('keyup', () => { questionCurrentPage=1; renderQuestionsTable(); });
+    document.getElementById('search-subject').addEventListener('keyup', () => renderSubjectsTable());
     
     window.addEventListener('resize', function() {
         if(window.innerWidth > 850) {
