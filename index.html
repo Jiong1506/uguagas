@@ -412,10 +412,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ======================= SUPABASE CONFIGURATION (PERBAIKAN) =======================
+    // ======================= SUPABASE CONFIGURATION =======================
     const SUPABASE_URL = "https://yqlbtfcupzfyypomkwuc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxbGJ0ZmN1cHpmeXlwb21rd3VjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTQzOTM4OCwiZXhwIjoyMDk3MDE1Mzg4fQ.8JKZwA5r1q1KTbJz5UNZMM4eIRbAgQYevl47WYLPynM";
-    // Perbaikan: menggunakan window.supabase karena library dimuat sebagai global
+    // Perbaikan: menggunakan window.supabase
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let globalSubjects = [], globalQuestions = [], globalResults = [];
@@ -425,7 +425,7 @@
     
     function genId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 8); }
 
-    // ====== FUNGSI TOGGLE SIDEBAR MOBILE ======
+    // ====== FUNGSI TOGGLE SIDEBAR ======
     function toggleSidebar() {
         const sidebar = document.getElementById('mainSidebar');
         const overlay = document.getElementById('sidebarOverlay');
@@ -444,7 +444,6 @@
         }
     }
 
-    // ======================= FUNGSI TAMBAHAN YANG HILANG =======================
     function clearSubjectForm() {
         document.getElementById('subject-id').value = '';
         document.getElementById('subject-name').value = '';
@@ -901,16 +900,19 @@
             document.getElementById('result-correct-tag').innerText = correctCount;
             document.getElementById('result-wrong-tag').innerText = wrongCount;
 
+            // PERBAIKAN: Tampilkan teks opsi, bukan hanya huruf
             let detailsHtml = activeExam.questions.map((q, idx) => {
                 let userAns = activeExam.userAnswers[q.id] || '-';
                 let isCorrect = userAns === q.kunci_jawaban;
+                let userAnswerText = (userAns !== '-') ? q['opsi_' + userAns.toLowerCase()] : '-';
+                let correctAnswerText = q['opsi_' + q.kunci_jawaban.toLowerCase()];
                 return `
                     <div class="exam-detail-item ${isCorrect?'correct':'incorrect'}">
                         <div class="fw-bold small text-muted">SOAL ${idx+1}</div>
                         <p class="mb-1 fw-semibold text-dark">${escapeHtml(q.pertanyaan)}</p>
                         <div class="detail-answer-row small">
-                            <div>Jawaban Anda: <span class="badge ${isCorrect?'bg-success':'bg-danger'}">${userAns}</span></div>
-                            <div>Kunci Jawaban: <span class="badge bg-primary">${q.kunci_jawaban}</span></div>
+                            <div>Jawaban Anda: <span class="badge ${isCorrect?'bg-success':'bg-danger'}">${escapeHtml(userAnswerText)}</span></div>
+                            <div>Kunci Jawaban: <span class="badge bg-primary">${escapeHtml(correctAnswerText)}</span></div>
                             <span class="badge-status ${isCorrect?'bg-success text-success bg-opacity-10':'bg-danger text-danger bg-opacity-10'}">
                                 ${isCorrect?'BENAR':'SALAH'}
                             </span>
@@ -997,7 +999,6 @@
             });
         });
         
-        // Event listener untuk preview gambar di modal soal
         const imageInput = document.getElementById('question-image-input');
         if (imageInput) {
             imageInput.addEventListener('change', function() { previewSelectedImage(this); });
