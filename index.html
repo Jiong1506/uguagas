@@ -330,6 +330,14 @@
         }
         .badge-status { border-radius: 50px; padding: 0.2rem 0.9rem; font-size: 0.7rem; font-weight: 600;
         }
+        .exam-question-image {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 16px;
+            margin: 10px 0;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
@@ -415,7 +423,6 @@
     // ======================= SUPABASE CONFIGURATION =======================
     const SUPABASE_URL = "https://yqlbtfcupzfyypomkwuc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlxbGJ0ZmN1cHpmeXlwb21rd3VjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTQzOTM4OCwiZXhwIjoyMDk3MDE1Mzg4fQ.8JKZwA5r1q1KTbJz5UNZMM4eIRbAgQYevl47WYLPynM";
-    // Perbaikan: menggunakan window.supabase
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let globalSubjects = [], globalQuestions = [], globalResults = [];
@@ -900,16 +907,24 @@
             document.getElementById('result-correct-tag').innerText = correctCount;
             document.getElementById('result-wrong-tag').innerText = wrongCount;
 
-            // PERBAIKAN: Tampilkan teks opsi, bukan hanya huruf
+            // MENAMPILKAN SEMUA SOAL LENGKAP DENGAN GAMBAR
             let detailsHtml = activeExam.questions.map((q, idx) => {
                 let userAns = activeExam.userAnswers[q.id] || '-';
                 let isCorrect = userAns === q.kunci_jawaban;
                 let userAnswerText = (userAns !== '-') ? q['opsi_' + userAns.toLowerCase()] : '-';
                 let correctAnswerText = q['opsi_' + q.kunci_jawaban.toLowerCase()];
+                
+                // Bagian gambar jika ada
+                let imageHtml = '';
+                if (q.image_base64) {
+                    imageHtml = `<div class="mt-2"><img src="${q.image_base64}" class="exam-question-image" alt="Gambar soal"></div>`;
+                }
+                
                 return `
                     <div class="exam-detail-item ${isCorrect?'correct':'incorrect'}">
                         <div class="fw-bold small text-muted">SOAL ${idx+1}</div>
                         <p class="mb-1 fw-semibold text-dark">${escapeHtml(q.pertanyaan)}</p>
+                        ${imageHtml}
                         <div class="detail-answer-row small">
                             <div>Jawaban Anda: <span class="badge ${isCorrect?'bg-success':'bg-danger'}">${escapeHtml(userAnswerText)}</span></div>
                             <div>Kunci Jawaban: <span class="badge bg-primary">${escapeHtml(correctAnswerText)}</span></div>
